@@ -1,7 +1,8 @@
 # Руководство: подбор стратегий zapret2 и самостоятельная работа с Lua
 
-Рабочая стратегия: `Hybrid.bat` (порт ESK_Hybrid_Ult v2, проверен на реальном трафике 2026-11-01).
-Смежные документы: `PROFILES_GUIDE.md` (свои профили + единый bat под service2.ps1), `LUA_GUIDE.md` (lua-памятка).
+Актуально для: `C:\Users\Tr3M0L0\Documents\fZapret2`, winws2 v1.0.6, Windows 10/11.
+Рабочая стратегия: `New2.bat` (порт ESK_Hybrid_Ult v2, проверен на реальном трафике 2026-11-01).
+Смежные документы: `PROFILES_GUIDE.md` (свои профили + единый bat под service.ps1), `LUA_GUIDE.md` (lua-памятка).
 
 ---
 
@@ -10,23 +11,30 @@
 ### Запуск
 1. Остановить zapret1, если работает (служба `zapret` или окно winws.exe) — WinDivert один на оба движка.
 2. Запустить `New2.bat` **от администратора**. Окно сворачивается, процесс — `winws2.exe`.
-3. Стоп: `taskkill /F /IM winws2.exe`.
+3. Стоп: **только закрытие окна winws2** (или `sc stop zapret2`, если это служба). **`taskkill`/`Stop-Process` по winws2 запрещены**: принудительный kill клиниет драйвер WinDivert — все дальнейшие запуски падают с `windivert: error opening filter: The object is referenced by other objects so cannot be deleted` (0x8032000A), лечится только перезагрузкой. Если ошибка уже поймана — reboot, затем установка службы заново.
 
-### Служба (автозапуск) — service2.ps1
-Запуск: `service2.bat` (сам запросит админа). Меню:
-1. **Install Service** — выбор любого `.bat` в каталоге → служба `zapret2` (autostart) с аргументами из этого bat.
-2. **Remove Service** — удалить службу и убить winws2.
+### Служба (автозапуск) — service.ps1
+Запуск: `service.bat` (сам запросит админа). Меню:
+1. **Install Service** — выбор любого `.bat` в каталоге → служба `zapret2` (autostart) с аргументами из этого bat. Перед установкой pre-flight: глушит драйвер WinDivert и проверяет, что он выгрузился; если драйвер «застрял» — установка отменяется с просьбой о reboot (защита от мёртвой службы).
+2. **Remove Service** — удалить службу (штатный `sc stop` + `sc delete`; stray-процессы не киляются — только предупреждение).
 3. **Check Status** — состояние служб/процессов + живой тест youtube/discord/github (HTTP-коды).
-4. **Restart Service**.
-5. **Run once** — запуск выбранного .bat без службы (сам глушит конфликтующие движки).
-6. **Stop ALL bypass** — остановить zapret2 и zapret1 (служба zapret1 не удаляется).
+4. **Restart Service** — `sc stop` + `sc start`.
+5. **Run once** — запуск выбранного .bat без службы (проверяет конфликтующие движки; если висят stray-процессы — просит закрыть их окна, не киляет).
+6. **Stop ALL bypass** — остановить zapret2 и zapret1 + сброс драйвера WinDivert (служба zapret1 не удаляется).
 7. **Build Custom.bat** — сборка стратегии из кусков `profiles\*.conf` (см. ниже).
 
-Неинтерактивные режимы (для скриптов): `-InstallFrom <bat>`, `-RemoveService`, `-StatusOnly`, `-ParseOnly <bat>`, `-BuildOnly "1,2,3"`.
+Неинтерактивные режимы (для скриптов): `-InstallFrom <bat>`, `-RemoveService`, `-StatusOnly`, `-ParseOnly <bat>`, `-BuildOnly "1,2,3"`, `-EnsureRunning` (watchdog, см. ниже).
+
+### Автозапуск: три уровня надёжности
+1. **`start= auto`** — SCM запускает службу сразу при загрузке. В ~секунду после boot winws2 дёргает SCM/WinDivert, когда RPC endpoint mapper ещё не готов → падение 7023 «no more endpoints».
+2. **SCM recovery** — `restart/5000/restart/15000/restart/60000`: если процесс успел дойти до RUNNING и упал, SCM перезапускает его через 5 сек. **Не срабатывает**, если процесс умер до SERVICE_RUNNING (SCM считает это провалом запуска, а не сбоем) — поэтому одного recovery мало.
+3. **Watchdog `zapret2-ensure`** — задача планировщика (SYSTEM, AtStartup + 30 сек): `service.ps1 -EnsureRunning`. Если служба не RUNNING — до 4 попыток `sc start` с паузой 15 сек. Пишет `logs\watchdog.log` (автообрезка до последних 200 строк при каждом запуске). Гарантированный подъём через ~30–45 сек после boot.
+
+Проверка после загрузки: `service.ps1 -StatusOnly` → `RUNNING` + HTTP-коды; лог `logs\watchdog.log` показывает, кто поднял службу («already running» = штатный механизм, «start attempt» = страховка). Подробности — MIGRATION_ZAPRET2.md, п. 11, 13, 14.
 
 **Модульные профили** (`profiles\`): каждый `.conf` = один профиль без `--new` (фильтры + payload + lua-desync), `00_base.conf` — глобальный блок (wf-фильтры, lua-init, blobs) — подключается всегда первым. Сборка склеивает `base + выбранные профили` с `--new` между ними. Проверено: набор всех 13 профилей даёт `Custom.bat`, идентичный `New2.bat` по токенам. Чтобы выработать свой вариант: копируете профиль, правите домены/технику, собираете, ставите в службу — всё из меню.
 
-Ручная установка службы (без service2.ps1) — только так:
+Ручная установка службы (без service.ps1) — только так:
 ```bat
 sc create zapret2 binPath= "\"C:\...\bin\winws2.exe\" --wf-... --lua-init=\"x=tls_mod(y,'rnd,rndsni')\" ..." start= auto
 ```

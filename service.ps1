@@ -1,22 +1,25 @@
 #requires -Version 5.1
 <#
 .SYNOPSIS
-  ZAPRET2 SERVICE MANAGER - аналог service.bat (zapret1) для winws2/zapret2.
+  ZAPRET2 SERVICE MANAGER - service.bat (zapret1) equivalent for winws2/zapret2.
 .DESCRIPTION
-  Меню: установка/удаление службы zapret2 из любого .bat-стратегии,
-  запуск без службы, статус с живым тестом, сборка Custom.bat из профилей profiles\*.conf.
-  Служба zapret1 ("zapret") не удаляется, только останавливается на время запуска winws2.
+  Menu: install/remove the zapret2 service from any .bat strategy,
+  run without service, status with live test, build Custom.bat from profiles\*.conf.
+  The zapret1 service ("zapret") is never deleted, only stopped while winws2 runs.
+  NOTE: this file is pure ASCII on purpose - PowerShell 5.1 misreads UTF-8
+  without BOM on systems with a non-UTF-8 system codepage (cp1251 etc.).
 .PARAMETER ParseOnly
-  Скрытый тестовый режим: напечатать аргументы winws2, извлечённые из указанного .bat, и выйти.
+  Hidden test mode: print winws2 arguments extracted from the given .bat and exit.
 .PARAMETER BuildOnly
-  Скрытый тестовый режим: собрать Custom.bat из профилей по номерам (например "1,2,3") и выйти.
+  Hidden test mode: build Custom.bat from profiles by numbers (e.g. "1,2,3") and exit.
 #>
 param(
     [string]$ParseOnly = "",
     [string]$BuildOnly = "",
     [string]$InstallFrom = "",
     [switch]$RemoveService,
-    [switch]$StatusOnly
+    [switch]$StatusOnly,
+    [switch]$EnsureRunning
 )
 
 $ErrorActionPreference = "Stop"
@@ -27,8 +30,8 @@ $BIN    = Join-Path $ROOT "bin\"
 $LISTS  = Join-Path $ROOT "lists\"
 $LUA    = Join-Path $ROOT "lua\"
 $PROFS  = Join-Path $ROOT "profiles"
-$SRV2   = "zapret2"          # наша служба
-$SRV1   = "zapret"           # служба zapret1 (не трогаем, только stop/start)
+$SRV2   = "zapret2"          # our service
+$SRV1   = "zapret"           # zapret1 service (never delete, only stop/start)
 $REGKEY = "HKLM:\System\CurrentControlSet\Services\$SRV2"
 
 # ---------- helpers ----------
@@ -52,95 +55,134 @@ function Test-Process([string]$Image) {
 }
 
 function Stop-ConflictingEngines {
-    # winws и winws2 делят WinDivert: одновременно работать не должны
+    # winws and winws2 share WinDivert: they must not run at the same time.
+    # Returns $false when a stray engine process blocks the install.
+    # A stray process must be closed gracefully (its console window / Ctrl+C):
+    # a force-kill wedges the WinDivert driver in the kernel (FWP_E_IN_USE).
     if ((Get-ServiceState $SRV1) -eq "RUNNING") {
-        Write-C "Останавливаю службу '$SRV1' (zapret1)..." Yellow
+        Write-C "Stopping service '$SRV1' (zapret1)..." Yellow
         sc.exe stop $SRV1 | Out-Null
     }
+    $stray = @()
     foreach ($img in "winws","winws2") {
         $p = Get-Process -Name $img -ErrorAction SilentlyContinue
-        if ($p) {
-            Write-C "Завершаю $img.exe ..." Yellow
-            $p | Stop-Process -Force -ErrorAction SilentlyContinue
-        }
+        if ($p) { $stray += $img }
     }
+    if ($stray.Count -gt 0) {
+        Write-C "Stray engine process(es) running: $($stray -join ', ')" Red
+        Write-C "Close them gracefully (their console window, not taskkill) and retry." Yellow
+        Write-C "If they cannot be closed - reboot, then install again." Yellow
+        return $false
+    }
+    return $true
 }
 
 function Get-CurrentStrategy {
     try {
         $v = (Get-ItemProperty -Path $REGKEY -Name "strategy" -ErrorAction Stop).strategy
         return $v
-    } catch { return "(не установлена)" }
+    } catch { return "(not installed)" }
 }
 
-# Извлечь аргументы winws2 из .bat стратегии
+# Extract winws2 arguments from a .bat strategy
 function Get-Winws2Args([string]$BatPath) {
     $raw = Get-Content -Raw -LiteralPath $BatPath
-    # ищем строку запуска: winws2.exe, сразу за которым идёт закрывающая кавычка + "^" или опции
+    # find the launch line: winws2.exe followed by closing quote + "^" or options
     $m = [regex]::Match($raw, 'winws2\.exe"?\s*(?:\^|--)\s*\r?\n?\s*--')
     if (-not $m.Success) { $m = [regex]::Match($raw, 'winws2\.exe"?\s*\^') }
-    if (-not $m.Success) { throw "В $BatPath не найден вызов winws2.exe с аргументами" }
+    if (-not $m.Success) { throw "No winws2.exe invocation with arguments found in $BatPath" }
     $idx = $m.Index
     $sub = $raw.Substring($idx + "winws2.exe".Length)
-    # склеить строки продолжения " ^\n"
+    # join continuation lines " ^\n"
     $sub = $sub -replace "\^\s*\r?\n", " "
-    # взять первую (теперь единственную длинную) строку аргументов
+    # take the first (now single long) argument line
     $sub = ($sub -split "`n")[0]
-    # убрать остаток закрывающей кавычки пути к exe в начале
+    # strip the leftover closing quote of the exe path at the start
     $sub = $sub.TrimStart(' ','"')
-    # раскрыть переменные каталогов
+    # expand directory variables
     $sub = $sub.Replace('%BIN%',$BIN).Replace('%LISTS%',$LISTS).Replace('%LUA%',$LUA).Replace('%~dp0',"$ROOT\")
     $sub = $sub.Trim()
-    if ($sub -notmatch '^--') { throw "Не удалось распарсить аргументы (не начинаются с '--'): $($sub.Substring(0,[Math]::Min(80,$sub.Length)))" }
+    if ($sub -notmatch '^--') { throw "Failed to parse arguments (do not start with '--'): $($sub.Substring(0,[Math]::Min(80,$sub.Length)))" }
     return $sub
+}
+
+function Reset-WinDivertDriver {
+    # Returns $true when no WinDivert driver service/driver is present.
+    # After a failed or killed winws2 the driver can stay loaded with DeleteFlag=1
+    # and Start=4; every later WinDivertOpen then fails 0x8032000A (FWP_E_IN_USE).
+    # A graceful stop clears it; if the driver cannot unload -> reboot is the only cure.
+    sc.exe query WinDivert 2>$null | Out-Null
+    if ($LASTEXITCODE -ne 0) { return $true }  # not installed: clean
+    sc.exe stop WinDivert 2>$null | Out-Null
+    for ($i=0; $i -lt 20; $i++) {
+        Start-Sleep -Milliseconds 500
+        sc.exe query WinDivert 2>$null | Out-Null
+        if ($LASTEXITCODE -ne 0) { return $true }  # entry gone: fully unloaded
+        $line = (sc.exe query WinDivert 2>$null | Select-String 'STATE').ToString()
+        if ($line -match 'STOPPED') { sc.exe delete WinDivert 2>$null | Out-Null }
+    }
+    return $false
 }
 
 function Install-ServiceFromBat([string]$BatPath) {
     $argLine = Get-Winws2Args $BatPath
-    # sc.exe токенизирует binPath по пробелам, игнорируя кавычки:
-    # "x = f(...)" внутри --lua-init даёт голый токен "=" и ошибку 1639.
-    # Убираем пробелы вокруг '=' - для lua это эквивалентно.
+    # sc.exe tokenizes binPath by spaces, ignoring quotes:
+    # "x = f(...)" inside --lua-init yields a bare "=" token and error 1639.
+    # Remove spaces around '=' - equivalent for lua.
     $argLine = $argLine -replace ' = ', '='
-    Write-C "`nАргументы службы:" DarkGray
+    Write-C "`nService arguments:" DarkGray
     Write-C $argLine DarkGray
 
-    Stop-ConflictingEngines
+    if (-not (Stop-ConflictingEngines)) { return }
     if ((Get-ServiceState $SRV2) -ne "NOT_INSTALLED") {
         sc.exe stop $SRV2 | Out-Null
         sc.exe delete $SRV2 | Out-Null
-        # ждём физического удаления: иначе create попадает в "pending deletion"
-        # и в реестре остаётся пустой ключ без ImagePath
+        # wait for physical deletion: otherwise create hits "pending deletion"
+        # and leaves an empty registry key without ImagePath
         for ($i=0; $i -lt 20 -and (Get-ServiceState $SRV2) -ne "NOT_INSTALLED"; $i++) {
             Start-Sleep -Milliseconds 250
         }
         Remove-Item -LiteralPath $REGKEY -Recurse -Force -ErrorAction SilentlyContinue
     }
+    # Pre-flight: a stuck WinDivert driver dooms the new service (FWP_E_IN_USE).
+    if (-not (Reset-WinDivertDriver)) {
+        Write-C "WinDivert driver is stuck in the kernel (pending delete, still loaded)." Red
+        Write-C "No service was created. Reboot the PC, then run the install again." Yellow
+        Write-C "Never kill winws2 (taskkill/Stop-Process) - that is what wedges the driver." Yellow
+        return
+    }
     $exe = Join-Path $BIN "winws2.exe"
-    # sc.exe из PowerShell ломает длинный binPath с кавычками (код 1639),
-    # WMI Create пишет пустой ImagePath - поэтому генерируем .cmd как в zapret1 service.bat.
-    # Все двойные кавычки внутри значения экранируем как \" :
-    # иначе sc их съедает, а winws2 тогда режет --lua-init по запятым внутри 'rnd,rndsni'
+    # sc.exe from PowerShell breaks a long binPath with quotes (error 1639),
+    # WMI Create writes an empty ImagePath - so we generate a .cmd like zapret1 service.bat.
+    # Escape every double quote inside the value as \" :
+    # otherwise sc eats them and winws2 then splits --lua-init on commas inside 'rnd,rndsni'
     $argEsc = $argLine.Replace('"', '\"')
     $tmpCmd = Join-Path $env:TEMP "zapret2_create.cmd"
+    # start= auto + failure recovery: at boot winws2 touches SCM/WinDivert while the
+    # RPC endpoint mapper is not ready yet (event 7023, error 1753, ~1s after boot).
+    # SCM restarts the service 5s later when RPC is up. delayed-auto was rejected:
+    # its ~120s delay is hardcoded in SCM and not configurable.
     $cmdBody = "@echo off`r`nsc.exe create $SRV2 binPath= `"\`"$exe\`" $argEsc`" DisplayName= `"zapret2`" start= auto`r`n"
     Set-Content -LiteralPath $tmpCmd -Value $cmdBody -Encoding ASCII
     cmd.exe /c "`"$tmpCmd`"" | Out-Null
     $rc = $LASTEXITCODE
     Remove-Item -LiteralPath $tmpCmd -Force -ErrorAction SilentlyContinue
-    if ($rc -ne 0) { throw "sc create завершился с кодом $rc" }
+    if ($rc -ne 0) { throw "sc create exited with code $rc" }
     $imgPath = (Get-ItemProperty "$REGKEY" -Name ImagePath -ErrorAction SilentlyContinue).ImagePath
-    if (-not $imgPath) { throw "Служба создана, но ImagePath пуст - создание не удалось" }
+    if (-not $imgPath) { throw "Service created but ImagePath is empty - creation failed" }
     sc.exe description $SRV2 "zapret2 DPI bypass (winws2)" | Out-Null
+    sc.exe failure $SRV2 reset= 86400 actions= restart/5000/restart/15000/restart/60000 | Out-Null
     $name = [IO.Path]::GetFileNameWithoutExtension($BatPath)
-    # ключ уже создан sc.exe; New-Item -Force здесь запретно: пересоздаёт ключ и затирает ImagePath
+    # the key already exists (created by sc.exe); New-Item -Force is forbidden here:
+    # it recreates the key and wipes ImagePath
     Set-ItemProperty -Path $REGKEY -Name "strategy" -Value $name
     sc.exe start $SRV2 | Out-Null
     Start-Sleep -Seconds 1
     $st = Get-ServiceState $SRV2
     if ($st -eq "RUNNING") {
-        Write-C "Служба '$SRV2' запущена, стратегия: $name" Green
+        Write-C "Service '$SRV2' is running, strategy: $name" Green
     } else {
-        Write-C "Служба создана, но состояние: $st. Смотрите логи/права." Red
+        Write-C "Service created but state is: $st. Check logs/permissions." Red
     }
 }
 
@@ -148,11 +190,16 @@ function Remove-Service2 {
     if ((Get-ServiceState $SRV2) -ne "NOT_INSTALLED") {
         sc.exe stop $SRV2 | Out-Null
         sc.exe delete $SRV2 | Out-Null
-        Write-C "Служба '$SRV2' удалена." Green
+        Write-C "Service '$SRV2' removed." Green
     } else {
-        Write-C "Служба '$SRV2' не установлена." Yellow
+        Write-C "Service '$SRV2' is not installed." Yellow
     }
-    Get-Process -Name winws2 -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+    # Never Stop-Process winws2 here: a force-kill wedges the WinDivert driver
+    # in the kernel (pending delete) and every later start fails FWP_E_IN_USE.
+    if (Get-Process -Name winws2 -ErrorAction SilentlyContinue) {
+        Write-C "A stray winws2.exe process is still running outside the service." Yellow
+        Write-C "Close it gracefully; if the next install reports a stuck driver - reboot." Yellow
+    }
 }
 
 function Test-Endpoint([string]$Url) {
@@ -161,17 +208,17 @@ function Test-Endpoint([string]$Url) {
 }
 
 function Show-Status {
-    Write-C "`n--- Службы ---" Cyan
+    Write-C "`n--- Services ---" Cyan
     $st2 = Get-ServiceState $SRV2
     $st1 = Get-ServiceState $SRV1
-    Write-C ("zapret2 : " + $st2 + "   (стратегия: " + (Get-CurrentStrategy) + ")") ($(if($st2 -eq 'RUNNING'){'Green'}else{'Yellow'}))
+    Write-C ("zapret2 : " + $st2 + "   (strategy: " + (Get-CurrentStrategy) + ")") ($(if($st2 -eq 'RUNNING'){'Green'}else{'Yellow'}))
     Write-C ("zapret  : " + $st1 + "  (zapret1, winws)") Gray
-    Write-C ("winws2.exe процесс: " + ($(if(Test-Process 'winws2.exe'){'RUNNING'}else{'нет'}))) Gray
-    Write-C ("winws.exe  процесс: " + ($(if(Test-Process 'winws.exe'){'RUNNING'}else{'нет'}))) Gray
+    Write-C ("winws2.exe process: " + ($(if(Test-Process 'winws2.exe'){'RUNNING'}else{'no'}))) Gray
+    Write-C ("winws.exe  process: " + ($(if(Test-Process 'winws.exe'){'RUNNING'}else{'no'}))) Gray
     if (-not (Get-ChildItem $BIN -Filter *.sys -ErrorAction SilentlyContinue)) {
-        Write-C "WinDivert*.sys в bin\ НЕ найден!" Red
+        Write-C "WinDivert*.sys NOT found in bin\ !" Red
     }
-    Write-C "`n--- Живой тест (HTTP-коды, 000 = нет ответа) ---" Cyan
+    Write-C "`n--- Live test (HTTP codes, 000 = no response) ---" Cyan
     foreach ($u in @("https://www.youtube.com","https://discord.com","https://github.com")) {
         $c = Test-Endpoint $u
         $color = if ($c -match '^(2|3)\d\d$') {'Green'} elseif ($c -match '^(401|403|404)$') {'Green'} else {'Red'}
@@ -182,35 +229,35 @@ function Show-Status {
 function Select-StrategyBat {
     $files = Get-ChildItem -LiteralPath $ROOT -Filter *.bat |
         Where-Object { $_.Name -notlike 'service*' } | Sort-Object Name
-    if (-not $files) { Write-C "В $ROOT нет .bat-стратегий." Red; return $null }
-    Write-C "`nДоступные стратегии:" Cyan
+    if (-not $files) { Write-C "No .bat strategies in $ROOT." Red; return $null }
+    Write-C "`nAvailable strategies:" Cyan
     for ($i=0; $i -lt $files.Count; $i++) { Write-C ("  {0}. {1}" -f ($i+1), $files[$i].Name) }
-    Write-C "  0. Отмена"
-    $ch = Read-Host "Выбор (0-$($files.Count))"
+    Write-C "  0. Cancel"
+    $ch = Read-Host "Choice (0-$($files.Count))"
     $n = 0; if (-not [int]::TryParse($ch,[ref]$n) -or $n -lt 1 -or $n -gt $files.Count) { return $null }
     return $files[$n-1].FullName
 }
 
-# Сборка Custom.bat из профилей. $Numbers - номера по списку profiles\*.conf (без 00_base)
+# Build Custom.bat from profiles. $Numbers - numbers from the profiles\*.conf list (excluding 00_base)
 function Build-CustomBat([string]$Numbers) {
     $base = Join-Path $PROFS "00_base.conf"
     $profs = Get-ChildItem -LiteralPath $PROFS -Filter *.conf | Sort-Object Name |
         Where-Object { $_.Name -ne "00_base.conf" }
-    if (-not (Test-Path $base) -or -not $profs) { throw "Каталог profiles\ пуст или нет 00_base.conf" }
+    if (-not (Test-Path $base) -or -not $profs) { throw "profiles\ is empty or 00_base.conf is missing" }
 
     $sel = @()
     foreach ($t in ($Numbers -split '[,\s]+' | Where-Object { $_ -ne "" })) {
         $n = 0
         if ([int]::TryParse($t,[ref]$n) -and $n -ge 1 -and $n -le $profs.Count) { $sel += $profs[$n-1] }
     }
-    if (-not $sel) { throw "Не выбрано ни одного профиля" }
+    if (-not $sel) { throw "No profiles selected" }
 
     $readConf = { param($p) Get-Content -LiteralPath $p | Where-Object { $_ -match '\S' -and $_ -notmatch '^\s*#' } }
 
     $lines = @()
     $lines += '@echo off'
     $lines += 'chcp 65001 > nul'
-    $lines += ':: Custom.bat - собран service2.ps1 из профилей: ' + (($sel | ForEach-Object Name) -join ', ')
+    $lines += ':: Custom.bat - built by service.ps1 from profiles: ' + (($sel | ForEach-Object Name) -join ', ')
     $lines += 'cd /d "%~dp0"'
     $lines += 'set "BIN=%~dp0bin\"'
     $lines += 'set "LISTS=%~dp0lists\"'
@@ -230,26 +277,27 @@ function Build-CustomBat([string]$Numbers) {
         $lines += ($body[$i] + $suffix)
     }
     $out = Join-Path $ROOT "Custom.bat"
-    Set-Content -LiteralPath $out -Value $lines -Encoding OEM
-    Write-C "Собран: $out" Green
-    Write-C ("Профили: " + (($sel | ForEach-Object Name) -join ', ')) Gray
+    # BOM-less ASCII: Set-Content -Encoding OEM adds a UTF-8 BOM that cmd.exe chokes on
+    [IO.File]::WriteAllLines($out, [string[]]$lines, [Text.Encoding]::ASCII)
+    Write-C "Built: $out" Green
+    Write-C ("Profiles: " + (($sel | ForEach-Object Name) -join ', ')) Gray
     return $out
 }
 
 function Build-CustomInteractive {
     $profs = Get-ChildItem -LiteralPath $PROFS -Filter *.conf | Sort-Object Name |
         Where-Object { $_.Name -ne "00_base.conf" }
-    Write-C "`nПрофили (00_base добавляется всегда):" Cyan
+    Write-C "`nProfiles (00_base is always added):" Cyan
     for ($i=0; $i -lt $profs.Count; $i++) {
         $hint = (Get-Content -LiteralPath $profs[$i].FullName -TotalCount 1) -replace '^\s*#\s*',''
-        Write-C ("  {0,2}. {1,-32} {2}" -f ($i+1), $profs[$i].Name, $hint) Gray
+        Write-C ("  {0,2}. {1,-36} {2}" -f ($i+1), $profs[$i].Name, $hint) Gray
     }
-    $all = Read-Host "Номера через запятую (Enter = все)"
+    $all = Read-Host "Numbers comma-separated (Enter = all)"
     if ($all -eq "") { $all = ($profs | ForEach-Object { $_.Name }) -join ',' }
     Build-CustomBat $all | Out-Null
 }
 
-# ---------- тестовые режимы (без меню) ----------
+# ---------- test modes (no menu) ----------
 if ($ParseOnly -ne "") {
     $p = if (Test-Path $ParseOnly) { $ParseOnly } else { Join-Path $ROOT $ParseOnly }
     Write-Output (Get-Winws2Args $p)
@@ -261,7 +309,7 @@ if ($BuildOnly -ne "") {
 }
 if ($InstallFrom -ne "") {
     $p = if (Test-Path $InstallFrom) { $InstallFrom } else { Join-Path $ROOT $InstallFrom }
-    try { Install-ServiceFromBat $p; exit 0 } catch { Write-C "ОШИБКА: $_" Red; exit 1 }
+    try { Install-ServiceFromBat $p; exit 0 } catch { Write-C "ERROR: $_" Red; exit 1 }
 }
 if ($RemoveService) {
     Remove-Service2
@@ -271,10 +319,34 @@ if ($StatusOnly) {
     Show-Status
     exit 0
 }
+if ($EnsureRunning) {
+    # Watchdog mode for the startup scheduled task: SCM recovery does NOT fire
+    # when winws2 dies before reporting SERVICE_RUNNING (boot RPC race, 7023).
+    # Up to 4 start attempts with 15s gaps; silent, appends to logs\watchdog.log.
+    $logDir = Join-Path $ROOT "logs"
+    if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir -Force | Out-Null }
+    $log = Join-Path $logDir "watchdog.log"
+    # log rotation: keep the file small - trim to the last 200 lines once it passes 64 KB
+    if ((Test-Path $log) -and ((Get-Item $log).Length -gt 65536)) {
+        Set-Content -LiteralPath $log -Value (Get-Content $log -Tail 200) -Encoding UTF8
+    }
+    function WD([string]$m) { Add-Content -LiteralPath $log -Value ("{0}  {1}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), $m) -Encoding UTF8 }
+    $st = Get-ServiceState $SRV2
+    if ($st -eq "NOT_INSTALLED") { WD "service not installed, nothing to do"; exit 0 }
+    if ($st -eq "RUNNING") { WD "already running"; exit 0 }
+    for ($try=1; $try -le 4 -and $st -ne "RUNNING"; $try++) {
+        WD "state=$st, start attempt $try"
+        sc.exe start $SRV2 | Out-Null
+        Start-Sleep -Seconds 15
+        $st = Get-ServiceState $SRV2
+    }
+    WD ("final state: " + $st)
+    if ($st -eq "RUNNING") { exit 0 } else { exit 1 }
+}
 
 # ---------- elevate ----------
 if (-not (Test-Admin)) {
-    Write-Host "Запрашиваю права администратора..."
+    Write-Host "Requesting administrator rights..."
     Start-Process powershell -Verb RunAs -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File',"`"$($MyInvocation.MyCommand.Path)`""
     exit
 }
@@ -284,43 +356,43 @@ while ($true) {
     Clear-Host
     Write-Host ""
     Write-C "  ZAPRET2 SERVICE MANAGER (winws2)" Cyan
-    Write-C ("  Стратегия службы: " + (Get-CurrentStrategy)) Gray
+    Write-C ("  Service strategy: " + (Get-CurrentStrategy)) Gray
     Write-C  "  ----------------------------------------" DarkGray
-    Write-Host "   :: СЛУЖБА"
-    Write-Host "      1. Install Service (из .bat-стратегии)"
+    Write-Host "   :: SERVICE"
+    Write-Host "      1. Install Service (from .bat strategy)"
     Write-Host "      2. Remove Service (zapret2)"
-    Write-Host "      3. Check Status (+ живой тест)"
+    Write-Host "      3. Check Status (+ live test)"
     Write-Host "      4. Restart Service"
     Write-Host ""
-    Write-Host "   :: ЗАПУСК БЕЗ СЛУЖБЫ"
-    Write-Host "      5. Run once (выбрать .bat)"
+    Write-Host "   :: RUN WITHOUT SERVICE"
+    Write-Host "      5. Run once (pick a .bat)"
     Write-Host "      6. Stop ALL bypass (zapret1+zapret2)"
     Write-Host ""
-    Write-Host "   :: СБОРКА"
-    Write-Host "      7. Build Custom.bat из profiles\"
+    Write-Host "   :: BUILD"
+    Write-Host "      7. Build Custom.bat from profiles\"
     Write-Host ""
     Write-C  "  ----------------------------------------" DarkGray
     Write-Host "      0. Exit"
     Write-Host ""
-    $ch = Read-Host "  Выбор (0-7)"
+    $ch = Read-Host "  Choice (0-7)"
     switch ($ch) {
-        "1" { $b = Select-StrategyBat; if ($b) { try { Install-ServiceFromBat $b } catch { Write-C "ОШИБКА: $_" Red } }; Pause }
+        "1" { $b = Select-StrategyBat; if ($b) { try { Install-ServiceFromBat $b } catch { Write-C "ERROR: $_" Red } }; Pause }
         "2" { Remove-Service2; Pause }
         "3" { Show-Status; Pause }
         "4" {
             if ((Get-ServiceState $SRV2) -ne "NOT_INSTALLED") {
-                Stop-ConflictingEngines
-                sc.exe stop $SRV2 | Out-Null; Start-Sleep -Milliseconds 500
-                sc.exe start $SRV2 | Out-Null
-                Write-C ("zapret2: " + (Get-ServiceState $SRV2)) Green
-            } else { Write-C "Служба не установлена." Yellow }
+                if (Stop-ConflictingEngines) {
+                    sc.exe stop $SRV2 | Out-Null; Start-Sleep -Milliseconds 500
+                    sc.exe start $SRV2 | Out-Null
+                    Write-C ("zapret2: " + (Get-ServiceState $SRV2)) Green
+                }
+            } else { Write-C "Service is not installed." Yellow }
             Pause
         }
         "5" {
             $b = Select-StrategyBat
-            if ($b) {
-                Stop-ConflictingEngines
-                Write-C "Запускаю $([IO.Path]::GetFileName($b)) ..." Green
+            if ($b -and (Stop-ConflictingEngines)) {
+                Write-C "Starting $([IO.Path]::GetFileName($b)) ..." Green
                 Start-Process cmd.exe -ArgumentList '/c',"`"$b`"" -WorkingDirectory $ROOT
             }
             Pause
@@ -328,11 +400,19 @@ while ($true) {
         "6" {
             Remove-Service2 | Out-Null
             if ((Get-ServiceState $SRV1) -eq "RUNNING") { sc.exe stop $SRV1 | Out-Null }
-            foreach ($img in "winws","winws2") { Get-Process -Name $img -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue }
-            Write-C "Все движки остановлены. Служба zapret1 НЕ удалена, только остановлена." Green
+            [void](Reset-WinDivertDriver)
+            # no force-kill of winws/winws2: it wedges the WinDivert driver
+            $stray = @()
+            foreach ($img in "winws","winws2") {
+                if (Get-Process -Name $img -ErrorAction SilentlyContinue) { $stray += $img }
+            }
+            if ($stray.Count -gt 0) {
+                Write-C "Still running: $($stray -join ', ') - close their console windows manually." Yellow
+            }
+            Write-C "All engines stopped. zapret1 service NOT removed, only stopped." Green
             Pause
         }
-        "7" { try { Build-CustomInteractive } catch { Write-C "ОШИБКА: $_" Red }; Pause }
+        "7" { try { Build-CustomInteractive } catch { Write-C "ERROR: $_" Red }; Pause }
         "0" { exit }
     }
 }
