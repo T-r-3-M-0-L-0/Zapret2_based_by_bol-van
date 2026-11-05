@@ -1,0 +1,314 @@
+# Placeholder
+domain.example.abc
+
+# Ubisoft / For Honor
+ubisoft.com
+ubi.com
+uplay.com
+ubisoftconnect.com
+ubiservices.com
+ubiservices.ubi.com
+public-ubiservices.ubi.com
+connect.ubisoft.com
+club.ubisoft.com
+store.ubi.com
+forhonorgame.com
+ubisoft-dns.com
+upc-corp.com
+geo.captcha-delivery.com
+ubisoft-orbit.akamaized.net
+uplay-shop.akamaized.net
+
+# Epic / Unreal / EAC
+epicgames.com
+epicgames.net
+epicgames.dev
+account.epicgames.com
+store.epicgames.com
+unrealengine.com
+easy.ac
+easyanticheat.net
+download.eac-cdn.com
+eac-cdn.com
+download-alt.easyanticheat.net
+api.easyanticheat.net
+modules-cdn.eac-cdn.com
+status.easyanticheat.net
+
+# BattlEye
+battleye.com
+battleye.net
+cdn.battleye.com
+
+# EA / Battlefield
+ea.com
+eaapp.com
+origin.com
+easports.com
+battlefield.com
+battlelog.com
+accounts.ea.com
+signin.ea.com
+help.ea.com
+gateway.ea.com
+api.origin.com
+api1.origin.com
+api2.origin.com
+api3.origin.com
+activity.ea.com
+easo.ea.com
+easss.ea.com
+easu.ea.com
+config.ea.com
+dataportal.ea.com
+game-data.ea.com
+gos.ea.com
+atlas.gos.ea.com
+gosredirector.ea.com
+blaze.ea.com
+rtm.tnt-ea.com
+
+# Steam / Steamworks
+steampowered.com
+steamcommunity.com
+steamgames.com
+steamcontent.com
+steamstatic.com
+steamusercontent.com
+steam-chat.com
+steamserver.net
+steamstat.us
+
+# Dead by Daylight / Behaviour
+deadbydaylight.com
+bhvr.com
+behaviourinteractive.com
+
+# The Outlast Trials / Red Barrels
+redbarrelsgames.com
+redbarrels.com
+
+# Microsoft / Xbox identity, useful for cross-platform gaming
+xbox.com
+xboxlive.com
+xboxservices.com
+gamepass.com
+xboxgamepass.com
+login.live.com
+login.microsoftonline.com
+auth.xboxlive.com
+xsts.auth.xboxlive.com
+user.auth.xboxlive.com
+title.mgl.xboxlive.com
+xkms.xboxlive.com
+
+# Rockstar Games / GTA / Social Club
+rockstargames.com
+rockstarnorth.com
+rockstarsocialclub.com
+socialclub.rockstargames.com
+rgl.rockstargames.com
+prs.rockstargames.com
+
+# Blizzard / Battle.net
+battle.net
+blizzard.com
+blz-contentstack.com
+
+# Activision / Call of Duty
+activision.com
+callofduty.com
+
+# Bungie / Destiny
+bungie.net
+
+# Wargaming / World of Tanks
+wargaming.net
+worldoftanks.ru
+worldofwarships.ru
+worldofwarplanes.ru
+
+# FaceIT
+faceit.com
+faceit-cdn.net
+
+# GOG / CD Projekt
+gog.com
+gog-statics.com
+cdprojektred.com
+cdprojekt.com
+
+# Itch.io
+itch.io
+itch.zone
+
+# Bethesda / Zenimax
+bethesda.net
+zenimax.com
+bethesdanet.com
+
+# Square Enix
+square-enix.com
+squareenix.com
+finalfantasyxiv.com
+
+# Bandai Namco
+bandainamcoent.eu
+bandainamcoent.com
+bandai NamcoCDN.com
+
+# Nexon
+nexon.net
+nexon.com
+nexoncdn.co.kr
+
+# Pearl Abyss / Black Desert
+pearlabyss.com
+playblackdesert.com
+
+# Kakao Games
+kakaogames.com
+
+# Krafton / PUBG
+krafton.com
+pubg.com
+pubgesports.com
+
+# miHoYo / HoYoverse / Genshin Impact / Honkai
+hoyoverse.com
+mihoyo.com
+genshinimpact.com
+honkaistarrail.com
+zenlesszonezero.com
+honkaiimpact3.com
+mihayou.com
+
+# Supercell
+supercell.com
+supercellgames.com
+supercell.helpshift.com
+seeurlpcl.com
+
+# Roblox
+roblox.com
+rbxcdn.com
+roblox-api.com
+roblox.plus
+
+# Nintendo
+nintendo.com
+nintendo.net
+nintendo.co.jp
+nintendoswitch.com
+
+# Sony / PlayStation
+playstation.com
+playstation.net
+sonyentertainmentnetwork.com
+api.playstation.com
+auth.api.sonyentertainmentnetwork.com
+
+# ArenaNet / Guild Wars 2
+arenanet.com
+guildwars2.com
+gw2.com
+
+# Digital Extremes / Warframe
+warframe.com
+digitalextremes.com
+
+# Grinding Gear Games / Path of Exile
+pathofexile.com
+grindinggear.com
+poe.game
+
+# Battlestate Games / Escape from Tarkov
+escapefromtarkov.com
+battlestategames.com
+bsgcdn.com
+
+# Garena
+grerenow.com
+grerena.com
+
+# Jagex / RuneScape
+jagex.com
+runescape.com
+runescape.wiki
+
+# Funcom / Conan Exiles
+funcom.com
+conanexiles.com
+
+# Standing Stone Games / LOTRO
+standingstonegames.com
+lotro.com
+ddo.com
+
+# Daybreak / EverQuest
+daybreakgames.com
+
+daybreakgames.net
+
+# CCP Games / EVE Online
+ccpgames.com
+eveonline.com
+
+# ZeniMax Online / ESO
+zenimaxonline.com
+elderscrollsonline.com
+
+# Arena Breakout
+arenabreakout.com
+
+# Lost Ark
+lostark.com
+playlostark.com
+
+# New World
+newworld.com
+playnewworld.com
+
+# Amazon Games
+amazongames.com
+
+# Scopely
+scopely.com
+
+# Kabam
+kabam.com
+
+# Niantic / Pokemon GO
+nianticlabs.com
+niantic.com
+
+# Twitch (additional)
+twitchcdn.net
+twitchsvc.net
+jtvnw.net
+
+# Emulation / Retro
+retroarch.com
+libretro.com
+citra-emu.org
+dolphin-emu.org
+rpcs3.net
+ryujinx.org
+desmume.org
+ppsspp.org
+fceux.com
+snes9x.com
+
+# Anti-cheat (additional)
+punkbuster.com
+gameguard.ac
+nprotect.net
+xigncode.com
+wellbia.com
+
+# Aliens vs Predator 2010 (community servers)
+avpunknown.com
+avp2010.avpunknown.com
+avpunknown.net
+avpunknown.org
+avpuniverse.com

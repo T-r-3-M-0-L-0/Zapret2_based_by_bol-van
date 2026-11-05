@@ -1,0 +1,16 @@
+config strategy 'Discord_circular_openwrt'
+	option enabled '1'
+	option port '443'
+	list filter_l3 'ipv4'
+	list protocol 'tcp'
+	list filter_l7 'tls'
+	list filter_l7 'discord'
+	list hostlist 'list_hosts_discord'
+	option script '--payload=tls_client_hello
+--in-range=-s5556
+--lua-desync=circular:fails=3:maxtime=20:nld=2
+--in-range=x
+--lua-desync=fake:blob=fake_default_tls:tcp_flags_set=SYN:strategy=1
+--lua-desync=multidisorder:pos=2,midsld:seqovl=1:seqovl_pattern=fake_default_tls:strategy=1
+--lua-desync=fake:blob=fake_default_tls:badsum:tcp_seq=10000000:repeats=1:strategy=2
+--lua-desync=multisplit:blob=fake_default_tls:badsum:tcp_ack=-66000:pos=2:nodrop:strategy=2:final'

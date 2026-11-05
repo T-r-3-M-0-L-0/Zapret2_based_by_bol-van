@@ -1,0 +1,9 @@
+config strategy 'DoH_DNS_openwrt'
+	option enabled '0'
+	option port '53'
+	list filter_l3 'ipv4'
+	list protocol 'udp'
+	list filter_l7 'unknown'
+	list filter_l7 'dns'
+	option script '--out-range=-n2
+--lua-desync=fake:blob=quic_initial_www_google_com:repeats=4'

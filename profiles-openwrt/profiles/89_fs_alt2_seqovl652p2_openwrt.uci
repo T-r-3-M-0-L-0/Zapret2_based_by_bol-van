@@ -1,0 +1,6 @@
+config strategy '89_fs_alt2_seqovl652p2_openwrt'
+	option enabled '0'
+	option port '80,443'
+	list protocol 'tcp'
+	list filter_l3 'ipv4'
+	option script '--filter-l7=http,tls --hostlist=/opt/zapret2/profiles-openwrt/lists/list-general.txt --hostlist=/opt/zapret2/profiles-openwrt/lists/list-general-user.txt --hostlist-exclude=/opt/zapret2/profiles-openwrt/lists/list-exclude.txt --hostlist-exclude=/opt/zapret2/profiles-openwrt/lists/list-exclude-user.txt --ipset-exclude=/opt/zapret2/profiles-openwrt/lists/ipset-exclude.txt --ipset-exclude=/opt/zapret2/profiles-openwrt/lists/ipset-exclude-user.txt --payload=tls_client_hello,http_req --out-range=-d10 --lua-desync=multisplit:pos=2:seqovl=652:seqovl_pattern=openwrt_tls_google'

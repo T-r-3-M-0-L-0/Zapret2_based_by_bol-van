@@ -1,0 +1,11 @@
+config strategy 'v5_openwrt'
+	option enabled '0'
+	option port '443'
+	list filter_l3 'ipv4'
+	list protocol 'tcp'
+	list filter_l7 'tls'
+	option script '--payload=tls_client_hello
+--lua-desync=fake:blob=blob_stun:tcp_seq=0:tcp_ack=-66000:badsum
+--lua-desync=fakeddisorder:pos=1:pattern=blob_tls_clienthello_www_google_com:tcp_seq=0:tcp_ack=-66000:badsum'
+	list hostlist_exclude 'list_hosts_user_exclude'
+	list hostlist_exclude 'list_hosts_youtube'

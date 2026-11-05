@@ -1,0 +1,10 @@
+config strategy 'games_tcp_openwrt'
+	option enabled '1'
+	option port '2802,2302,2502,3478-3480,3724,6000-8000,8085,8090,8100,8903,8904,25565,27015-27030,27036-27037,50001,60442'
+	list filter_l3 'ipv4'
+	list protocol 'tcp'
+	option script '--out-range=<n4
+--payload=known,unknown
+--lua-desync=fake:blob=blob_stun2:repeats=8:tcp_ts=-600000:payload=known,unknown
+--lua-desync=fake:blob=blob_tls_clienthello_www_onetrust_com:repeats=8:tcp_ts=-600000:payload=known,unknown
+--lua-desync=multisplit:pos=1:seqovl=664:seqovl_pattern=blob_tls_clienthello_www_onetrust_com:repeats=8:payload=known,unknown'

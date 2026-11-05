@@ -1,0 +1,6 @@
+config strategy '99_fs_alt5_syndata_openwrt'
+	option enabled '0'
+	option port '80,443,2053,2083,2087,2096,8443'
+	list protocol 'tcp'
+	list filter_l3 'ipv4'
+	option script '--filter-l3=ipv4  --ipset-exclude=/opt/zapret2/profiles-openwrt/lists/ipset-exclude.txt --ipset-exclude=/opt/zapret2/profiles-openwrt/lists/ipset-exclude-user.txt --lua-desync=syndata --lua-desync=multidisorder'

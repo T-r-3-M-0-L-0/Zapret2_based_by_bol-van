@@ -1,0 +1,6 @@
+config strategy '90_game_udp_openwrt'
+	option enabled '0'
+	option port '7711,12000'
+	list protocol 'udp'
+	list filter_l3 'ipv4'
+	option script '--payload=all --lua-desync=fake:blob=openwrt_quic_ru:repeats=1:ip_autottl=6,1-20:payload=all'

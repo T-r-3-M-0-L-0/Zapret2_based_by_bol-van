@@ -1,0 +1,10 @@
+config strategy 'alt11_openwrt'
+	option enabled '0'
+	option port '80,443'
+	list filter_l3 'ipv4'
+	list protocol 'tcp'
+	option script '--lua-desync=fake:blob=blob_stun2:repeats=8:tcp_ts=-600000
+--lua-desync=fake:blob=blob_tls_clienthello_www_onetrust_com:repeats=8:tcp_ts=-600000
+--lua-desync=multisplit:pos=1:seqovl=664:seqovl_pattern=blob_tls_clienthello_www_onetrust_com:repeats=8'
+	list hostlist_exclude 'list_hosts_user_exclude'
+	list hostlist_exclude 'list_hosts_youtube'
