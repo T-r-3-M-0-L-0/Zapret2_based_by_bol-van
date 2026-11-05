@@ -11,7 +11,7 @@
 ### Запуск
 1. Остановить zapret1, если работает (служба `zapret` или окно winws.exe) — WinDivert один на оба движка.
 2. Запустить `New2.bat` **от администратора**. Окно сворачивается, процесс — `winws2.exe`.
-3. Стоп: **только закрытие окна winws2** (или `sc stop zapret2`, если это служба). **`taskkill`/`Stop-Process` по winws2 запрещены**: принудительный kill клиниет драйвер WinDivert — все дальнейшие запуски падают с `windivert: error opening filter: The object is referenced by other objects so cannot be deleted` (0x8032000A), лечится только перезагрузкой. Если ошибка уже поймана — reboot, затем установка службы заново.
+3. Стоп: **только закрытие окна winws2** (или `sc stop zapret2`, если это служба). **`taskkill`/`Stop-Process` по winws2 запрещены**: принудительный kill клиниет драйвер WinDivert — все дальнейшие запуски падают с `windivert: error opening filter: The object is referenced by other objects so cannot be deleted` (0x8032000A), лечится только перезагрузкой. Если ошибка уже поймана — reboot, затем установка службы заново. Проверено (05.11): Ctrl+C в консоли winws2 не срабатывает, корректно глушит только **CTRL_BREAK** (или закрытие окна) — в логе `quit requested` + `LUA SHUTDOWN`.
 
 ### Служба (автозапуск) — service.ps1
 Запуск: `service.bat` (сам запросит админа). Меню:
