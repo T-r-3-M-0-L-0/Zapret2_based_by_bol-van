@@ -1,6 +1,5 @@
 # Руководство: подбор стратегий zapret2 и самостоятельная работа с Lua
 
-Актуально для: `C:\Users\Tr3M0L0\Documents\fZapret2`, winws2 v1.0.6, Windows 10/11.
 Рабочая стратегия: `New2.bat` (порт ESK_Hybrid_Ult v2, проверен на реальном трафике 2026-11-01).
 Смежные документы: `PROFILES_GUIDE.md` (свои профили + единый bat под service.ps1), `LUA_GUIDE.md` (lua-памятка).
 
@@ -10,7 +9,7 @@
 
 ### Запуск
 1. Остановить zapret1, если работает (служба `zapret` или окно winws.exe) — WinDivert один на оба движка.
-2. Запустить `New2.bat` **от администратора**. Окно сворачивается, процесс — `winws2.exe`.
+2. Запустить `Hybrid.bat` **от администратора**. Окно сворачивается, процесс — `winws2.exe`.
 3. Стоп: **только закрытие окна winws2** (или `sc stop zapret2`, если это служба). **`taskkill`/`Stop-Process` по winws2 запрещены**: принудительный kill клиниет драйвер WinDivert — все дальнейшие запуски падают с `windivert: error opening filter: The object is referenced by other objects so cannot be deleted` (0x8032000A), лечится только перезагрузкой. Если ошибка уже поймана — reboot, затем установка службы заново. Проверено (05.11): Ctrl+C в консоли winws2 не срабатывает, корректно глушит только **CTRL_BREAK** (или закрытие окна) — в логе `quit requested` + `LUA SHUTDOWN`.
 
 ### Служба (автозапуск) — service.ps1
