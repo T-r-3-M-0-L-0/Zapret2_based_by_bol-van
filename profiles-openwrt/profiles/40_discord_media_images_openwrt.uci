@@ -1,0 +1,6 @@
+config strategy '40_discord_media_images_openwrt'
+	option enabled '0'
+	option port '443'
+	list protocol 'tcp'
+	list filter_l3 'ipv4'
+	option script '--filter-l7=tls --hostlist-domains=media.discordapp.net,images-ext-1.discordapp.net,images-ext-2.discordapp.net --payload=tls_client_hello --out-range=-d10 --lua-desync=fake:blob=openwrt_tls_max_ozon:tcp_ts=-600000:repeats=8 --lua-desync=fakedsplit:pattern=0x00:tcp_ts=-600000'

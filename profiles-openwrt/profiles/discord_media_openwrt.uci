@@ -1,0 +1,8 @@
+config strategy 'discord_media_openwrt'
+	option enabled '1'
+	option port '2053,2083,2087,2096,8443'
+	list filter_l3 'ipv4'
+	list protocol 'tcp'
+	list filter_l7 'tls'
+	option script '--lua-desync=fake:blob=blob_tls_clienthello_www_google_com:repeats=8:tcp_ts=-600000
+--lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=blob_tls_clienthello_www_google_com:repeats=8'

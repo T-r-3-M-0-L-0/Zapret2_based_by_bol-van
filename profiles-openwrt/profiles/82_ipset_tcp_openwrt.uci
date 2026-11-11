@@ -1,0 +1,6 @@
+config strategy '82_ipset_tcp_openwrt'
+	option enabled '0'
+	option port '80,443,8443'
+	list protocol 'tcp'
+	list filter_l3 'ipv4'
+	option script '--filter-l7=http,tls --ipset=/opt/zapret2/profiles-openwrt/lists/ipset-all.txt --hostlist-exclude=/opt/zapret2/profiles-openwrt/lists/list-exclude.txt --hostlist-exclude=/opt/zapret2/profiles-openwrt/lists/list-exclude-user.txt --ipset-exclude=/opt/zapret2/profiles-openwrt/lists/ipset-exclude.txt --ipset-exclude=/opt/zapret2/profiles-openwrt/lists/ipset-exclude-user.txt --payload=tls_client_hello,http_req --out-range=-d10 --lua-desync=hostfakesplit:host=ozon.ru:tcp_ts=-600000:repeats=4'

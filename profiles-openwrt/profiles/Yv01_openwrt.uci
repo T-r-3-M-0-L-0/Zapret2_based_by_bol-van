@@ -1,0 +1,9 @@
+config strategy 'Yv01_openwrt'
+	option enabled '0'
+	option port '443'
+	list filter_l3 'ipv4'
+	list protocol 'tcp'
+	list filter_l7 'tls'
+	list hostlist 'list_hosts_youtube'
+	option script '--payload=tls_client_hello
+--lua-desync=multidisorder:pos=7,sld+1:ip_autottl=2,2-12'

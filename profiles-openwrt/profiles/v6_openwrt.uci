@@ -1,0 +1,10 @@
+config strategy 'v6_openwrt'
+	option enabled '0'
+	option port '443'
+	list filter_l3 'ipv4'
+	list protocol 'tcp'
+	list filter_l7 'tls'
+	option script '--payload=tls_client_hello
+--lua-desync=hostfakesplit:midhost=host-2:host=i2.photo.2gis.com:tcp_seq=0:tcp_ack=-66000:badsum'
+	list hostlist_exclude 'list_hosts_user_exclude'
+	list hostlist_exclude 'list_hosts_youtube'

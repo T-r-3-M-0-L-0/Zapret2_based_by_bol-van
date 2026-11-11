@@ -1,0 +1,6 @@
+config strategy '81_ipset_quic_openwrt'
+	option enabled '0'
+	option port '443'
+	list protocol 'udp'
+	list filter_l3 'ipv4'
+	option script '--filter-l7=quic --ipset=/opt/zapret2/profiles-openwrt/lists/ipset-all.txt --hostlist-exclude=/opt/zapret2/profiles-openwrt/lists/list-exclude.txt --hostlist-exclude=/opt/zapret2/profiles-openwrt/lists/list-exclude-user.txt --ipset-exclude=/opt/zapret2/profiles-openwrt/lists/ipset-exclude.txt --ipset-exclude=/opt/zapret2/profiles-openwrt/lists/ipset-exclude-user.txt --payload=quic_initial --lua-desync=fake:blob=openwrt_quic_google:repeats=6'

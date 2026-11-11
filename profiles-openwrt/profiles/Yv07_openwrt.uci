@@ -1,0 +1,12 @@
+config strategy 'Yv07_openwrt'
+	option enabled '0'
+	option port '443'
+	list filter_l3 'ipv4'
+	list protocol 'tcp'
+	list filter_l7 'tls'
+	list hostlist 'list_hosts_youtube'
+	option script '--payload=tls_client_hello
+--lua-desync=fake:blob=0x00000000:tcp_seq=-10000:tcp_ack=-66000
+--lua-desync=fake:blob=0x0F0F0F0F:tcp_seq=-10000:tcp_ack=-66000
+--lua-desync=fake:blob=blob_tls_clienthello_www_google_com:optional:tcp_seq=-10000:tcp_ack=-66000:tls_mod=rnd,dupsid,sni=fonts.google.com
+--lua-desync=multidisorder:pos=10,midsld:seqovl=336:seqovl_pattern=blob_tls_clienthello_www_google_com'

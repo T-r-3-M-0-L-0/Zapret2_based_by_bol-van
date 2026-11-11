@@ -1,0 +1,1 @@
+start "" "tg://proxy?server=127.0.0.1&port=1080&secret=c36be8ffc5f480784b4c5fc31f1eefe8"

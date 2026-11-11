@@ -1,0 +1,6 @@
+config strategy '91_udp_catchall_openwrt'
+	option enabled '0'
+	option port '1024-3477,3481-19293,19345-49999,50101-65535'
+	list protocol 'udp'
+	list filter_l3 'ipv4'
+	option script '--payload=all --out-range=-n2 --lua-desync=fake:blob=openwrt_quic_ru:repeats=8:ip_autottl=6,1-20:payload=all'

@@ -1,0 +1,9 @@
+config strategy 'Youtube_UDP_openwrt'
+	option enabled '1'
+	option port '443'
+	list filter_l3 'ipv4'
+	list protocol 'udp'
+	list filter_l7 'quic'
+	list hostlist 'list_hosts_youtube'
+	option script '--payload=quic_initial
+--lua-desync=fake:blob=fake_default_quic:repeats=2'

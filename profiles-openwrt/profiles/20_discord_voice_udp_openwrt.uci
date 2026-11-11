@@ -1,0 +1,6 @@
+config strategy '20_discord_voice_udp_openwrt'
+	option enabled '0'
+	option port '19294-19344,50000-50100'
+	list protocol 'udp'
+	list filter_l3 'ipv4'
+	option script '--filter-l7=discord,stun --payload=all --lua-desync=fake:blob=openwrt_quic_vk:repeats=6:payload=all'

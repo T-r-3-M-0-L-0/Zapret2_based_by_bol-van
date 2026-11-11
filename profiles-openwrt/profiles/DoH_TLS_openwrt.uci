@@ -1,0 +1,8 @@
+config strategy 'DoH_TLS_openwrt'
+	option enabled '0'
+	option port '853'
+	list filter_l3 'ipv4'
+	list protocol 'tcp'
+	list filter_l7 'tls'
+	option script '--hostlist-domains=dns.adguard-dns.com,cloudflare-dns.com,one.one.one.one,dns.alidns.com,dns.quad9.net
+--lua-desync=multisplit:seqovl=8:seqovl_pattern=0x000100502112A442'

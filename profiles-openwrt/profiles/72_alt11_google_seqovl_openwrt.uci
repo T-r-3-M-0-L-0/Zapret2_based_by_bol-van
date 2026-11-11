@@ -1,0 +1,6 @@
+config strategy '72_alt11_google_seqovl_openwrt'
+	option enabled '0'
+	option port '443'
+	list protocol 'tcp'
+	list filter_l3 'ipv4'
+	option script '--filter-l7=tls --hostlist=/opt/zapret2/profiles-openwrt/lists/list-google.txt --payload=tls_client_hello --out-range=-d10 --lua-desync=fake:blob=openwrt_tls_google:tcp_ts=-600000:repeats=8:ip_id=zero --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=openwrt_tls_google:ip_id=zero'

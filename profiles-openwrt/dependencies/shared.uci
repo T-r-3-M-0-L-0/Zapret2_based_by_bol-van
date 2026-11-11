@@ -1,0 +1,291 @@
+
+config zapret2 'main'
+	option enabled '1'
+	option debug '0'
+	option scripts '1'
+	option postnat '1'
+	option enable_ipv6 '0'
+	option filter_ttl_expired_icmp '1'
+	option flowoffload 'donttouch'
+	option mode_filter 'none'
+	option desync_mark '0x40000000'
+	option desync_mark_postnat '0x20000000'
+	option qnum '300'
+	option ws_user 'daemon'
+	option nfqws_ports_tcp '80,443,853,1024-65535'
+	option nfqws_ports_udp '53,80,88,443,1024-65535'
+	option nfqws_tcp_pkt_out '25'
+	option nfqws_tcp_pkt_in '5'
+	option nfqws_udp_pkt_out '5'
+	option nfqws_udp_pkt_in '3'
+	option lua_gc '600'
+	option ctrack_timeouts '60:300:60:60'
+	option set_maxelem '522288'
+	option gzip_lists '1'
+	option mdig_threads '30'
+	option autohostlist_retrans_threshold '3'
+	option autohostlist_fail_threshold '3'
+	option autohostlist_fail_time '60'
+	option autohostlist_debuglog '0'
+	option autohostlist_incoming_maxseq '4096'
+	option autohostlist_retrans_maxseq '32768'
+	option autohostlist_retrans_reset '1'
+	option autohostlist_udp_in '1'
+	option autohostlist_udp_out '4'
+
+config list 'list_hosts_auto'
+	option path '/opt/zapret2/ipset/zapret_hosts_auto.txt'
+
+config list 'list_hosts_user'
+	option path '/opt/zapret2/ipset/zapret_hosts_user.txt'
+
+config list 'list_hosts_user_exclude'
+	option path '/opt/zapret2/ipset/zapret_hosts_user_exclude.txt'
+
+config list 'list_hosts_youtube'
+	option path '/opt/zapret2/ipset/zapret_hosts_youtube.txt'
+
+config list 'list_zapret_ip_exclude'
+	option path '/opt/zapret2/ipset/zapret-ip-exclude.txt'
+
+config list 'list_zapret_ip_exclude6'
+	option path '/opt/zapret2/ipset/zapret-ip-exclude6.txt'
+
+config list 'list_hosts_discord'
+	option path '/opt/zapret2/ipset/zapret_hosts_discord.txt'
+
+config blob 'blob_dht_find_node'
+	option path '/opt/zapret2/files/fake/dht_find_node.bin'
+	option enabled '0'
+
+config blob 'blob_dht_get_peers'
+	option path '/opt/zapret2/files/fake/dht_get_peers.bin'
+	option enabled '0'
+
+config blob 'blob_discord_ip_discovery_with_port'
+	option path '/opt/zapret2/files/fake/discord-ip-discovery-with-port.bin'
+	option enabled '0'
+
+config blob 'blob_discord_ip_discovery_without_port'
+	option path '/opt/zapret2/files/fake/discord-ip-discovery-without-port.bin'
+	option enabled '0'
+
+config blob 'blob_dtls_clienthello_w3_org'
+	option path '/opt/zapret2/files/fake/dtls_clienthello_w3_org.bin'
+	option enabled '0'
+
+config blob 'blob_http_iana_org'
+	option path '/opt/zapret2/files/fake/http_iana_org.bin'
+	option enabled '0'
+
+config blob 'blob_isakmp_initiator_request'
+	option path '/opt/zapret2/files/fake/isakmp_initiator_request.bin'
+	option enabled '0'
+
+config blob 'blob_quic_3'
+	option path '/opt/zapret2/files/fake/quic_3.bin'
+	option enabled '0'
+
+config blob 'blob_quic_4'
+	option path '/opt/zapret2/files/fake/quic_4.bin'
+	option enabled '0'
+
+config blob 'blob_quic_initial_facebook_com'
+	option path '/opt/zapret2/files/fake/quic_initial_facebook_com.bin'
+	option enabled '0'
+
+config blob 'blob_quic_initial_facebook_com_quiche'
+	option path '/opt/zapret2/files/fake/quic_initial_facebook_com_quiche.bin'
+	option enabled '0'
+
+config blob 'blob_quic_initial_rr1___sn_xguxaxjvh_n8me_googlevideo_com_kyber_1'
+	option path '/opt/zapret2/files/fake/quic_initial_rr1---sn-xguxaxjvh-n8me_googlevideo_com_kyber_1.bin'
+	option enabled '0'
+
+config blob 'blob_quic_initial_rr1___sn_xguxaxjvh_n8me_googlevideo_com_kyber_2'
+	option path '/opt/zapret2/files/fake/quic_initial_rr1---sn-xguxaxjvh-n8me_googlevideo_com_kyber_2.bin'
+	option enabled '0'
+
+config blob 'blob_quic_initial_rr2___sn_gvnuxaxjvh_o8ge_googlevideo_com'
+	option path '/opt/zapret2/files/fake/quic_initial_rr2---sn-gvnuxaxjvh-o8ge_googlevideo_com.bin'
+	option enabled '0'
+
+config blob 'blob_quic_initial_rutracker_org'
+	option path '/opt/zapret2/files/fake/quic_initial_rutracker_org.bin'
+	option enabled '0'
+
+config blob 'blob_quic_initial_rutracker_org_kyber_1'
+	option path '/opt/zapret2/files/fake/quic_initial_rutracker_org_kyber_1.bin'
+	option enabled '0'
+
+config blob 'blob_quic_initial_rutracker_org_kyber_2'
+	option path '/opt/zapret2/files/fake/quic_initial_rutracker_org_kyber_2.bin'
+	option enabled '0'
+
+config blob 'blob_quic_initial_vk_com'
+	option path '/opt/zapret2/files/fake/quic_initial_vk_com.bin'
+	option enabled '0'
+
+config blob 'blob_quic_initial_www_google_com'
+	option path '/opt/zapret2/files/fake/quic_initial_www_google_com.bin'
+	option enabled '0'
+
+config blob 'blob_quic_short_header'
+	option path '/opt/zapret2/files/fake/quic_short_header.bin'
+	option enabled '0'
+
+config blob 'blob_rdp'
+	option path '/opt/zapret2/files/fake/rdp.bin'
+	option enabled '0'
+
+config blob 'blob_sip'
+	option path '/opt/zapret2/files/fake/sip.bin'
+	option enabled '0'
+
+config blob 'blob_stun'
+	option path '/opt/zapret2/files/fake/stun.bin'
+	option enabled '1'
+
+config blob 'blob_tls_clienthello_escapefromtarkov_com'
+	option path '/opt/zapret2/files/fake/tls_clienthello_escapefromtarkov_com.bin'
+	option enabled '0'
+
+config blob 'blob_tls_clienthello_gosuslugi_ru'
+	option path '/opt/zapret2/files/fake/tls_clienthello_gosuslugi_ru.bin'
+	option enabled '1'
+
+config blob 'blob_tls_clienthello_iana_org'
+	option path '/opt/zapret2/files/fake/tls_clienthello_iana_org.bin'
+	option enabled '0'
+
+config blob 'blob_tls_clienthello_iana_org_bigsize'
+	option path '/opt/zapret2/files/fake/tls_clienthello_iana_org_bigsize.bin'
+	option enabled '0'
+
+config blob 'blob_tls_clienthello_rutracker_org_kyber'
+	option path '/opt/zapret2/files/fake/tls_clienthello_rutracker_org_kyber.bin'
+	option enabled '0'
+
+config blob 'blob_tls_clienthello_sberbank_ru'
+	option path '/opt/zapret2/files/fake/tls_clienthello_sberbank_ru.bin'
+	option enabled '0'
+
+config blob 'blob_tls_clienthello_t2_ru'
+	option path '/opt/zapret2/files/fake/tls_clienthello_t2_ru.bin'
+	option enabled '1'
+
+config blob 'blob_tls_clienthello_vk_com'
+	option path '/opt/zapret2/files/fake/tls_clienthello_vk_com.bin'
+	option enabled '1'
+
+config blob 'blob_tls_clienthello_vk_com_kyber'
+	option path '/opt/zapret2/files/fake/tls_clienthello_vk_com_kyber.bin'
+	option enabled '0'
+
+config blob 'blob_tls_clienthello_www_4pda_to'
+	option path '/opt/zapret2/files/fake/tls_clienthello_www_4pda_to.bin'
+	option enabled '1'
+
+config blob 'blob_tls_clienthello_www_google_com'
+	option path '/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin'
+	option enabled '1'
+
+config blob 'blob_tls_clienthello_www_max_ru'
+	option path '/opt/zapret2/files/fake/tls_clienthello_www_max_ru.bin'
+	option enabled '0'
+
+config blob 'blob_wireguard_initiation'
+	option path '/opt/zapret2/files/fake/wireguard_initiation.bin'
+	option enabled '0'
+
+config blob 'blob_wireguard_response'
+	option path '/opt/zapret2/files/fake/wireguard_response.bin'
+	option enabled '0'
+
+config blob 'blob_zero_256'
+	option path '/opt/zapret2/files/fake/zero_256.bin'
+	option enabled '0'
+
+config blob 'blob_zero_512'
+	option path '/opt/zapret2/files/fake/zero_512.bin'
+	option enabled '0'
+
+config blob 'blob_zero_1024'
+	option path '/opt/zapret2/files/fake/zero_1024.bin'
+	option enabled '0'
+
+config blob 'blob_bgp_open'
+	option path '/opt/zapret2/files/fake/bgp_open.bin'
+	option enabled '0'
+
+config blob 'blob_bitcoin'
+	option path '/opt/zapret2/files/fake/bitcoin.bin'
+	option enabled '0'
+
+config blob 'blob_dns'
+	option path '/opt/zapret2/files/fake/dns.bin'
+	option enabled '0'
+
+config blob 'blob_dtls_serverhello'
+	option path '/opt/zapret2/files/fake/dtls_serverhello.bin'
+	option enabled '0'
+
+config blob 'blob_ntp4'
+	option path '/opt/zapret2/files/fake/ntp4.bin'
+	option enabled '0'
+
+config blob 'blob_quic2_example_com'
+	option path '/opt/zapret2/files/fake/quic2_example_com.bin'
+	option enabled '0'
+
+config blob 'blob_quic_initial_dbankcloud_ru'
+	option path '/opt/zapret2/files/fake/quic_initial_dbankcloud_ru.bin'
+	option enabled '0'
+
+config blob 'blob_rtsp_options'
+	option path '/opt/zapret2/files/fake/rtsp_options.bin'
+	option enabled '0'
+
+config blob 'blob_sip_register'
+	option path '/opt/zapret2/files/fake/sip_register.bin'
+	option enabled '0'
+
+config blob 'blob_smtp_ehlo'
+	option path '/opt/zapret2/files/fake/smtp_ehlo.bin'
+	option enabled '0'
+
+config blob 'blob_snmp_get_next_request'
+	option path '/opt/zapret2/files/fake/snmp_get_next_request.bin'
+	option enabled '0'
+
+config blob 'blob_tls_alert'
+	option path '/opt/zapret2/files/fake/tls_alert.bin'
+	option enabled '0'
+
+config blob 'blob_tls_clienthello_google_com_tlsrec'
+	option path '/opt/zapret2/files/fake/tls_clienthello_google_com_tlsrec.bin'
+	option enabled '0'
+
+config blob 'blob_tls_serverhello_google_com_tls13'
+	option path '/opt/zapret2/files/fake/tls_serverhello_google_com_tls13.bin'
+	option enabled '0'
+
+config luascript 'lua_zapret_obfs'
+	option path '/opt/zapret2/lua/zapret-obfs.lua'
+	option enabled '0'
+
+config luascript 'lua_zapret_pcap'
+	option path '/opt/zapret2/lua/zapret-pcap.lua'
+	option enabled '0'
+
+config luascript 'lua_zapret_tests'
+	option path '/opt/zapret2/lua/zapret-tests.lua'
+	option enabled '0'
+
+config luascript 'lua_zapret_wgobfs'
+	option path '/opt/zapret2/lua/zapret-wgobfs.lua'
+	option enabled '0'
+
+config luascript 'lua_openwrt_profiles'
+	option path '/opt/zapret2/profiles-openwrt/blobs.lua'
+	option enabled '1'

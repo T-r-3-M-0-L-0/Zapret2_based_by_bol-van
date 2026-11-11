@@ -1,0 +1,10 @@
+config strategy 'v1_openwrt'
+	option enabled '0'
+	option port '443'
+	list filter_l3 'ipv4'
+	list protocol 'tcp'
+	list filter_l7 'tls'
+	option script '--payload=tls_client_hello
+--lua-desync=multisplit:pos=2:seqovl=681:seqovl_pattern=blob_stun'
+	list hostlist_exclude 'list_hosts_user_exclude'
+	list hostlist_exclude 'list_hosts_youtube'
