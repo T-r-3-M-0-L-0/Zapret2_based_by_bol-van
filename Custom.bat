@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 > nul
-:: Custom.bat - built by service.ps1 from profiles: 05_quic_google.conf, 10_quic_general.conf, 20_discord_voice_udp.conf, 30_discord_updates.conf, 40_discord_media_images.conf, 50_discord_cdn.conf, 60_discord_main.conf, 70_google.conf, 71_github.conf, 81_ipset_quic.conf, 82_ipset_tcp.conf, 90_game_udp.conf, 91_udp_catchall.conf, 97_fs_fta_multidisorder.conf
+:: Custom.bat - built by service.ps1 from profiles: 10_quic_general.conf, 20_discord_voice_udp.conf, 30_discord_updates.conf, 40_discord_media_images.conf, 50_discord_cdn.conf, 60_discord_main.conf, 68_googlevideo.conf, 70_google.conf, 71_github.conf, 81_ipset_quic.conf, 82_ipset_tcp.conf, 90_game_udp.conf, 91_udp_catchall.conf, 97_fs_fta_multidisorder.conf
 cd /d "%~dp0"
 set "BIN=%~dp0bin\"
 set "LISTS=%~dp0lists\"
@@ -23,10 +23,6 @@ start "zapret2: custom" /min "%BIN%winws2.exe" ^
 --lua-init="tls_ozon=tls_mod(tls_google,'sni=ozon.ru')" ^
 --lua-init="tls_max_ozon=tls_mod(tls_max,'sni=ozon.ru')" ^
 --lua-init="tls_def_ozon=tls_mod(fake_default_tls,'sni=ozon.ru')" ^
---filter-udp=443 --filter-l7=quic --hostlist="%LISTS%list-google.txt" --hostlist-exclude="%LISTS%list-exclude.txt" --hostlist-exclude="%LISTS%list-exclude-user.txt" --ipset-exclude="%LISTS%ipset-exclude.txt" --ipset-exclude="%LISTS%ipset-exclude-user.txt" ^
---payload=quic_initial ^
---lua-desync=fake:blob=quic_google:repeats=2 ^
---new ^
 --filter-udp=443 --filter-l7=quic --hostlist="%LISTS%list-general.txt" --hostlist="%LISTS%list-general-user.txt" --hostlist-exclude="%LISTS%list-exclude.txt" --hostlist-exclude="%LISTS%list-exclude-user.txt" --ipset-exclude="%LISTS%ipset-exclude.txt" --ipset-exclude="%LISTS%ipset-exclude-user.txt" ^
 --payload=quic_initial ^
 --lua-desync=fake:blob=quic_google:repeats=6 ^
@@ -54,6 +50,10 @@ start "zapret2: custom" /min "%BIN%winws2.exe" ^
 --payload=tls_client_hello --out-range=-d10 ^
 --lua-desync=fake:blob=tls_def_ozon:tcp_seq=-10000:tcp_ack=-66000:repeats=8 ^
 --lua-desync=multidisorder:pos=1,sniext+1,midsld ^
+--new ^
+--filter-tcp=443 --filter-l7=tls --hostlist="%LISTS%list-googlevideo.txt" ^
+--payload=tls_client_hello --out-range=-d10 ^
+--lua-desync=multidisorder:pos=1,midsld ^
 --new ^
 --filter-tcp=443 --filter-l7=tls --hostlist="%LISTS%list-google.txt" ^
 --payload=tls_client_hello --out-range=-d10 ^
