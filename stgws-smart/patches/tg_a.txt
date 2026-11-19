@@ -1,0 +1,4 @@
+	if [ -f /etc/stgws/smart-map ] && [ -x /etc/stgws/route-smart.sh ]; then
+		echo "==> Умная карта: перестраиваю по стабильным диапазонам"
+		ash /etc/stgws/route-smart.sh || echo "ОШИБКА: умная карта не применилась — оставлена карта подбора"
+	fi

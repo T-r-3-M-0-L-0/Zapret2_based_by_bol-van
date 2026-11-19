@@ -1,0 +1,27 @@
+{
+	"luci-app-zapret2-presets": {
+		"description": "Grant access to zapret2 strategy presets",
+		"read": {
+			"ubus": {
+				"luci": [ "getInitList" ],
+				"uci": [ "get", "state" ]
+			},
+			"uci": [ "zapret2" ],
+			"file": {
+				"/etc/zapret2-presets": [ "list" ],
+				"/etc/zapret2-presets/*": [ "read", "list" ]
+			}
+		},
+		"write": {
+			"ubus": {
+				"uci": [ "set", "commit", "delete", "changes" ],
+				"luci": [ "setInitAction" ]
+			},
+			"uci": [ "zapret2" ],
+			"file": {
+				"/etc/zapret2-presets/*": [ "read", "write", "remove" ],
+				"/etc/zapret2-presets/check.sh": [ "exec" ]
+			}
+		}
+	}
+}

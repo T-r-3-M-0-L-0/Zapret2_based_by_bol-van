@@ -1,0 +1,4 @@
+					if (res.ok) {
+						zm.toast('Готово', 'info');
+						zm.tgwsStatus().then(function(d) { tgwsData = d; renderTgws(d); });
+					}

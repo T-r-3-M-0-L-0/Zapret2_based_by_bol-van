@@ -301,21 +301,45 @@ function Install-TgPython {
     return $p
 }
 
+# Silent native runner: PS 5.1 turns ANY native stderr into red
+# NativeCommandError noise (even harmless pip WARNINGs), so stdout/stderr go
+# to temp files; the tail is kept in $script:TgLastOut for error reports.
+function Invoke-TgQuiet([string]$exe, [string[]]$pargs) {
+    $tmpOut = [IO.Path]::GetTempFileName(); $tmpErr = [IO.Path]::GetTempFileName()
+    try {
+        $p = Start-Process -FilePath $exe -ArgumentList $pargs -NoNewWindow -Wait -PassThru `
+            -RedirectStandardOutput $tmpOut -RedirectStandardError $tmpErr
+        $script:TgLastOut = @((Get-Content $tmpOut -ErrorAction SilentlyContinue)) + @((Get-Content $tmpErr -ErrorAction SilentlyContinue))
+        return $p.ExitCode
+    } catch { $script:TgLastOut = @("$_"); return 1 }
+    finally { Remove-Item $tmpOut,$tmpErr -Force -ErrorAction SilentlyContinue }
+}
+
+# Silent import test: native stderr can leak to the console in PS 5.1 even
+# with 2>$null, so run via Start-Process with fully redirected streams.
+# NB: -ArgumentList joins array items with spaces WITHOUT quoting - the -c
+# payload contains spaces and must carry its own quotes.
+function Test-TgDeps([string]$exe) {
+    return ((Invoke-TgQuiet $exe @('-c','"import httpx, h2"')) -eq 0)
+}
+
 # The proxy needs httpx[http2] (cf_h2.py). Auto-install if missing.
 function Ensure-TgProxyDeps([string]$Python) {
     $exe = $Python -replace 'pythonw\.exe$','python.exe'
-    & $exe -c "import httpx, h2" 2>$null
-    if ($LASTEXITCODE -eq 0) { return $true }
-    Write-C "Installing proxy dependencies (httpx[http2])..." Yellow
-    & $exe -m ensurepip --upgrade 2>$null | Out-Null
-    & $exe -m pip install --quiet "httpx[http2]>=0.28"
-    if ($LASTEXITCODE -ne 0) {
-        Write-C "pip install failed. Check the internet connection and retry." Red
+    if (Test-TgDeps $exe) { return $true }
+    Write-C "Proxy deps missing (httpx[http2]); installing..." Yellow
+    [void](Invoke-TgQuiet $exe @('-m','ensurepip','--upgrade'))
+    $rc = Invoke-TgQuiet $exe @('-m','pip','install','--quiet','--no-cache-dir','--disable-pip-version-check','httpx[http2]>=0.28')
+    if ($rc -ne 0) {
+        Write-C "pip install failed (exit $rc, last lines):" Red
+        $script:TgLastOut | Select-Object -Last 6 | ForEach-Object { Write-C "  $_" DarkGray }
+        Write-C "Check the internet connection / TLS and retry." Yellow
         return $false
     }
-    & $exe -c "import httpx, h2" 2>$null
-    if ($LASTEXITCODE -eq 0) { Write-C "Dependencies OK." Green; return $true }
-    Write-C "Dependencies still not importable after install." Red
+    if (Test-TgDeps $exe) { Write-C "Dependencies OK." Green; return $true }
+    Write-C "Deps installed but still not importable by this python: $exe" Red
+    Write-C "Import traceback:" Yellow
+    $script:TgLastOut | Select-Object -Last 8 | ForEach-Object { Write-C "  $_" DarkGray }
     return $false
 }
 

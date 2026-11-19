@@ -1,0 +1,4 @@
+	local saved=false smart=false
+	[ -s /etc/stgws/route.conf.custom ] && saved=true
+	[ -f /etc/stgws/smart-map ] && smart=true
+	printf '{"installed":"%s","running":%s,"version":"%s","latest":"%s","newer":%s,"domain":"%s","route_saved":%s,"smart_auto":%s}\n' "$installed" "$running" "$(esc "$ver")" "$(esc "$latest")" "$(_tg_newer "$ver" "$latest" && echo true || echo false)" "$(esc "$domain")" "$saved" "$smart"

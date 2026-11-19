@@ -1,0 +1,5 @@
+		route_smart)    job_start tgws_route_smart do_route_smart ;;
+		route_save)     do_route_save ;;
+		route_restore)  do_route_restore ;;
+		route_auto_on)  : > /etc/stgws/smart-map; echo '{"ok":true}' ;;
+		route_auto_off) rm -f /etc/stgws/smart-map; echo '{"ok":true}' ;;

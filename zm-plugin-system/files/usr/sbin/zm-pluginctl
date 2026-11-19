@@ -1,0 +1,95 @@
+#!/bin/ash
+# zm-pluginctl — менеджер манифест-плагинов Zapret Manager (SPA :7788).
+# install <каталог> | remove <id> | list | reindex
+# ВНИМАНИЕ: set -u не использовать — jshn обращается к неустановленным переменным.
+
+PLUG_DIR="/etc/zm-plugins"
+WWW_INDEX_DIR="/www/zm-plugins"
+INDEX="$WWW_INDEX_DIR/index.json"
+
+. /usr/share/libubox/jshn.sh
+
+say() { echo "$*"; }
+fail() { say "FAIL: $*"; exit 1; }
+
+valid_id() { case "$1" in *[!a-z0-9-]*|'') return 1 ;; esac; return 0; }
+
+field() { jsonfilter -i "$1" -e "\$.$2" 2>/dev/null; }
+
+reindex() {
+	mkdir -p "$WWW_INDEX_DIR" || fail "нет доступа к $WWW_INDEX_DIR"
+	json_init
+	json_add_array plugins
+	local m id title sub icon group
+	for m in "$PLUG_DIR"/*/manifest.json; do
+		[ -f "$m" ] || continue
+		id="$(field "$m" id)"
+		valid_id "$id" || { say "..  пропускаю $m: невалидный id"; continue; }
+		title="$(field "$m" title)"; [ -n "$title" ] || title="$id"
+		sub="$(field "$m" sub)"
+		icon="$(field "$m" icon)"; [ -n "$icon" ] || icon="layers"
+		group="$(field "$m" group)"; [ -n "$group" ] || group="Плагины"
+		json_add_object
+		json_add_string id "$id"
+		json_add_string title "$title"
+		json_add_string sub "$sub"
+		json_add_string icon "$icon"
+		json_add_string group "$group"
+		json_add_string view "plugin"
+		json_add_string part "$id"
+		json_close_object
+	done
+	json_close_array
+	json_dump > "$INDEX.new" && mv "$INDEX.new" "$INDEX" || fail "запись $INDEX"
+}
+
+cmd_install() {
+	local src="$1" m id
+	[ -d "$src" ] || fail "каталог не найден: $src"
+	m="$src/manifest.json"
+	[ -f "$m" ] || fail "в $src нет manifest.json"
+	id="$(field "$m" id)" || fail "manifest: не читается поле id"
+	valid_id "$id" || fail "manifest: невалидный id '$id' (нужны a-z, 0-9, -)"
+	[ -n "$(field "$m" title)" ] || fail "manifest: нет поля title"
+	[ -f "$src/backend.sh" ] || fail "в $src нет backend.sh"
+	mkdir -p "$PLUG_DIR" || fail "нет доступа к $PLUG_DIR"
+	rm -rf "$PLUG_DIR/$id.tmp" "$PLUG_DIR/$id.old"
+	[ -d "$PLUG_DIR/$id" ] && mv "$PLUG_DIR/$id" "$PLUG_DIR/$id.old"
+	mkdir "$PLUG_DIR/$id.tmp" || fail "mkdir"
+	cp -r "$src"/. "$PLUG_DIR/$id.tmp/" || { rm -rf "$PLUG_DIR/$id.tmp"; fail "копирование"; }
+	chmod +x "$PLUG_DIR/$id.tmp/backend.sh" 2>/dev/null
+	mv "$PLUG_DIR/$id.tmp" "$PLUG_DIR/$id" || fail "перемещение"
+	[ -d "$PLUG_DIR/$id.old" ] && rm -rf "$PLUG_DIR/$id.old"
+	reindex
+	local ptitle nw
+	ptitle="$(field "$m" title)"
+	nw="$(jsonfilter -i "$m" -e '$.widgets[*]' 2>/dev/null | wc -l)"
+	say "OK: плагин '$id' установлен ($ptitle, виджетов: $nw)"
+	say "Обновите панель :7788 (маршрут появится автоматически)."
+}
+
+cmd_remove() {
+	local id="$1"
+	valid_id "$id" || fail "невалидный id"
+	[ -d "$PLUG_DIR/$id" ] || fail "плагин не найден: $id"
+	rm -rf "$PLUG_DIR/$id"
+	reindex
+	say "OK: плагин '$id' удалён"
+}
+
+cmd_list() {
+	local m id title
+	for m in "$PLUG_DIR"/*/manifest.json; do
+		[ -f "$m" ] || { say "(плагинов нет)"; return 0; }
+		id="$(field "$m" id)"; title="$(field "$m" title)"
+		say "  $id — $title"
+	done
+}
+
+case "${1:-}" in
+	install) [ $# = 2 ] || fail "использование: zm-pluginctl install <каталог>"; cmd_install "$2" ;;
+	remove)  [ $# = 2 ] || fail "использование: zm-pluginctl remove <id>"; cmd_remove "$2" ;;
+	list)    cmd_list ;;
+	reindex) reindex; say "OK: $INDEX пересобран" ;;
+	*) say "zm-pluginctl: install <каталог> | remove <id> | list | reindex"; exit 1 ;;
+esac

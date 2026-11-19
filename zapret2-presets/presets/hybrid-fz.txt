@@ -1,0 +1,16 @@
+# Текущая рабочая связка (Ростелеком/ЕСК/МГСТ): fz-профили + Youtube_UDP
+Youtube_UDP
+fz09_quic_discord
+fz10_quic_general
+fz20_discord_voice_udp
+fz30_discord_updates
+fz40_discord_media_images
+fz50_discord_cdn
+fz60_discord_main
+fz68_googlevideo
+fz70_google
+fz71_github
+fz81_ipset_quic
+fz82_ipset_tcp
+fz90_game_udp
+fz97_general

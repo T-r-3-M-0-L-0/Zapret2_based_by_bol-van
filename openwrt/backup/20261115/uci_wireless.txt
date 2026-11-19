@@ -1,0 +1,38 @@
+package wireless
+
+config wifi-device 'radio0'
+	option type 'mac80211'
+	option path 'soc/11280000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0'
+	option radio '0'
+	option band '2g'
+	option channel '6'
+	option htmode 'EHT20'
+	option cell_density '0'
+	option country 'RU'
+
+config wifi-iface 'default_radio0'
+	option device 'radio0'
+	option network 'lan'
+	option mode 'ap'
+	option ssid 'OpenWrt_2'
+	option encryption 'psk2+ccmp'
+	option key '0130_1117_0411'
+
+config wifi-device 'radio1'
+	option type 'mac80211'
+	option path 'soc/11280000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0'
+	option radio '1'
+	option band '5g'
+	option channel '48'
+	option htmode 'EHT160'
+	option cell_density '0'
+
+config wifi-iface 'default_radio1'
+	option device 'radio1'
+	option network 'lan'
+	option mode 'ap'
+	option ssid 'OpenWrt_5'
+	option encryption 'sae'
+	option key '0130_1117_0411'
+	option ocv '0'
+

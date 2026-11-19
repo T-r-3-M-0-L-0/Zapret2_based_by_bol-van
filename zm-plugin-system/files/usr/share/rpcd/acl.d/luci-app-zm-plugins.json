@@ -1,0 +1,17 @@
+{
+	"luci-app-zm-plugins": {
+		"description": "Manifest plugins for Zapret Manager SPA",
+		"read": {
+			"file": {
+				"/etc/zm-plugins": [ "list" ],
+				"/etc/zm-plugins/*": [ "list" ],
+				"/etc/zm-plugins/*/*": [ "read", "list" ]
+			}
+		},
+		"write": {
+			"file": {
+				"/etc/zm-plugins/*/backend.sh": [ "exec", "read" ]
+			}
+		}
+	}
+}

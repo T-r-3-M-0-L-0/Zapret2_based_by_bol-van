@@ -1,0 +1,22 @@
+				actions.push(E('button', {
+					'class': 'cbi-button',
+					'title': 'Перестроить карту дата-центров по стабильным диапазонам Cloudflare',
+					'click': function() { doTgwsAction('route_smart'); }
+				}, 'Умная карта'));
+				actions.push(E('button', {
+					'class': 'cbi-button',
+					'title': 'Сохранить текущую карту как эталон',
+					'click': function() { doTgwsAction('route_save'); }
+				}, 'Сохранить карту'));
+				if (d.route_saved) {
+					actions.push(E('button', {
+						'class': 'cbi-button',
+						'title': 'Вернуть сохранённую карту и перезапустить',
+						'click': function() { doTgwsAction('route_restore'); }
+					}, 'Восстановить карту'));
+				}
+				actions.push(E('button', {
+					'class': 'cbi-button' + (d.smart_auto ? ' cbi-button-positive' : ''),
+					'title': 'После подбора домена автоматически перестраивать карту по стабильным диапазонам',
+					'click': function() { doTgwsAction(d.smart_auto ? 'route_auto_off' : 'route_auto_on'); }
+				}, d.smart_auto ? 'Авто-карта: вкл' : 'Авто-карта: выкл'));

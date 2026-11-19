@@ -1,0 +1,55 @@
+{
+	"id": "plugin-manager",
+	"title": "Менеджер плагинов",
+	"version": "1.1",
+	"sub": "Установка и удаление манифест-плагинов",
+	"icon": "layers",
+	"group": "Плагины",
+	"description": "Управление плагинами панели: список, установка из каталога на роутере, удаление, пересборка реестра. Плагин — каталог с manifest.json и backend.sh (спецификация — PLUGIN_DEV.md пакета zm-plugin-system).",
+	"widgets": [
+		{
+			"type": "status",
+			"title": "Сводка",
+			"action": "summary"
+		},
+		{
+			"type": "table",
+			"title": "Установленные плагины",
+			"action": "list",
+			"columns": [ "ID", "Название", "Группа", "Версия", "Виджетов" ]
+		},
+		{
+			"type": "form",
+			"title": "Установить плагин",
+			"label": "Установить",
+			"action": "install",
+			"fields": [
+				{ "name": "path", "label": "Каталог на роутере", "placeholder": "/tmp/my-plugin", "required": true }
+			],
+			"desc": "В каталоге должны быть manifest.json и backend.sh. Залейте каталог на роутер (scp -O -r my-plugin root@<роутер>:/tmp/), затем установите."
+		},
+		{
+			"type": "form",
+			"title": "Удалить плагин",
+			"label": "Удалить",
+			"action": "remove",
+			"danger": true,
+			"fields": [
+				{ "name": "id", "label": "ID плагина", "placeholder": "my-plugin", "required": true }
+			],
+			"desc": "ID смотрите в таблице выше. Удаляются файлы плагина из /etc/zm-plugins; реестр пересобирается автоматически."
+		},
+		{
+			"type": "button",
+			"title": "Служебное",
+			"label": "Пересобрать реестр",
+			"action": "reindex",
+			"desc": "Перечитывает манифесты в /etc/zm-plugins и обновляет меню панели. Нужно после ручной правки манифестов."
+		},
+		{
+			"type": "log",
+			"title": "Журнал операций",
+			"action": "log"
+		}
+	]
+}
