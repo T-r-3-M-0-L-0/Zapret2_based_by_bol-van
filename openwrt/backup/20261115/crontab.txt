@@ -1,3 +1,0 @@
-*/2 * * * * /opt/zapret-manager-luci/backend.sh zm_watch >/dev/null 2>&1 # zm-rpcd-watch
-40 4 * * * /opt/zapret-manager-luci/backend.sh adblock_cron >/dev/null 2>&1 # zm-adblock
-17 * * * * /opt/zapret2/healthcheck.sh >/dev/null 2>&1 # zhealth
